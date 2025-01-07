@@ -35,30 +35,41 @@ RUN ARCH="$(uname -m)" && \
 && chmod +x /usr/bin/azcopy
 
 # AZ INSTALL
-ARG AZ_VERSION=2.67.0
-RUN mkdir -p /etc/apt/keyrings && \
-    wget --quiet --output-document - "https://packages.microsoft.com/keys/microsoft.asc" | gpg --dearmor | tee /etc/apt/keyrings/microsoft.gpg > /dev/null && \
-    chmod go+r /etc/apt/keyrings/microsoft.gpg && \
-    AZ_DIST="$(lsb_release -cs)" && \
-    printf 'Types: deb\nURIs: https://packages.microsoft.com/repos/azure-cli/\nSuites: %s\nComponents: main\nArchitectures: %s\nSigned-by: /etc/apt/keyrings/microsoft.gpg' "${AZ_DIST}" "$(dpkg --print-architecture)" | tee /etc/apt/sources.list.d/azure-cli.sources && \
-    apt-get update && apt-get install -y --no-install-recommends azure-cli="${AZ_VERSION}-1~${AZ_DIST}" && apt-get clean && rm -rf /var/lib/apt/lists/*
+# ARG AZ_VERSION=2.67.0
+# RUN mkdir -p /etc/apt/keyrings && \
+#     wget --quiet --output-document - "https://packages.microsoft.com/keys/microsoft.asc" | gpg --dearmor | tee /etc/apt/keyrings/microsoft.gpg > /dev/null && \
+#     chmod go+r /etc/apt/keyrings/microsoft.gpg && \
+#     AZ_DIST="$(lsb_release -cs)" && \
+#     printf 'Types: deb\nURIs: https://packages.microsoft.com/repos/azure-cli/\nSuites: %s\nComponents: main\nArchitectures: %s\nSigned-by: /etc/apt/keyrings/microsoft.gpg' "${AZ_DIST}" "$(dpkg --print-architecture)" | tee /etc/apt/sources.list.d/azure-cli.sources && \
+#     apt-get update && apt-get install -y --no-install-recommends azure-cli="${AZ_VERSION}-1~${AZ_DIST}" && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# GEOIPUPDATE INSTALL
-ARG GEOIPUPDATE_VERSION=v7.1.0
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-RUN ARCH="$(uname -m)" && \
-    if [ "$ARCH" = "x86_64" ]; then \
-        DOWNLOAD_URL="https://github.com/maxmind/geoipupdate/releases/download/${GEOIPUPDATE_VERSION}/geoipupdate_${GEOIPUPDATE_VERSION#v}_linux_amd64.tar.gz"; \
-    elif [ "$ARCH" = "aarch64" ]; then \
-        DOWNLOAD_URL="https://github.com/maxmind/geoipupdate/releases/download/${GEOIPUPDATE_VERSION}/geoipupdate_${GEOIPUPDATE_VERSION#v}_linux_arm64.tar.gz"; \
-    else \
-        echo "Unsupported architecture: $ARCH" && exit 1; \
-    fi \
-&& wget -qO- "${DOWNLOAD_URL}" -O /tmp/geoipupdate.tgz \
-&& BIN_LOCATION=$(tar -tzf /tmp/geoipupdate.tgz | grep "/geoipupdate$") \
-&& export BIN_LOCATION \
-&& tar -xvzf /tmp/geoipupdate.tgz --strip-components=1 --directory=/usr/bin/ "$BIN_LOCATION" \
-&& chmod +x /usr/bin/geoipupdate
+# # GEOIPUPDATE INSTALL
+# ARG GEOIPUPDATE_VERSION=v7.1.0
+# SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+# RUN ARCH="$(uname -m)" && \
+#     if [ "$ARCH" = "x86_64" ]; then \
+#         DOWNLOAD_URL="https://github.com/maxmind/geoipupdate/releases/download/${GEOIPUPDATE_VERSION}/geoipupdate_${GEOIPUPDATE_VERSION#v}_linux_amd64.tar.gz"; \
+#     elif [ "$ARCH" = "aarch64" ]; then \
+#         DOWNLOAD_URL="https://github.com/maxmind/geoipupdate/releases/download/${GEOIPUPDATE_VERSION}/geoipupdate_${GEOIPUPDATE_VERSION#v}_linux_arm64.tar.gz"; \
+#     else \
+#         echo "Unsupported architecture: $ARCH" && exit 1; \
+#     fi \
+# && wget -qO- "${DOWNLOAD_URL}" -O /tmp/geoipupdate.tgz \
+# && BIN_LOCATION=$(tar -tzf /tmp/geoipupdate.tgz | grep "/geoipupdate$") \
+# && export BIN_LOCATION \
+# && tar -xvzf /tmp/geoipupdate.tgz --strip-components=1 --directory=/usr/bin/ "$BIN_LOCATION" \
+# && chmod +x /usr/bin/geoipupdate
+
+# AZCOPY INSTALL
+ARG AZCOPY_VERSION=10.27.1
+RUN wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /etc/apt/keyrings/microsoft.gpg && \
+    chmod go+r /etc/apt/keyrings/microsoft.gpg && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ $(lsb_release -cs) main" > /etc/apt/sources.list.d/azure-cli.list && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends azcopy=${AZCOPY_VERSION}-1~$(lsb_release -cs) && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 
 # kubectl install
 ARG KUBECTL_VERSION
